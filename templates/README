@@ -1,0 +1,5 @@
+This CloudFormation template will create a test environment for the AWS Demo Upgrade.
+
+Update master.yaml with network settings, key name and initial AMI.
+Use master.yaml to create a new CF stack.
+

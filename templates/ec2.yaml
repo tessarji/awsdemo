@@ -1,0 +1,88 @@
+Description: >
+  This template deploys a single EC2 instance to each of the subnets in the provided VPC
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  InstanceType:
+    Description: Which instance type for the EC2 instances?
+    Type: String
+    Default: t2.micro
+
+  VPC:
+    Description: Choose which VPC to deploy EC2 instances to
+    Type: AWS::EC2::VPC::Id
+
+  Subnets:
+    Description: Choose which subnets these EC2 instances should be deployed to
+    Type: List<AWS::EC2::Subnet::Id>
+
+  SecurityGroup:
+    Description: Select the Security Group to use for the EC2 hosts
+    Type: AWS::EC2::SecurityGroup::Id
+
+  Keyname:
+    Description: The name of a EC2 keypair for ssh access
+    Type: String
+
+  AMI:
+    Description: EC2 AMI ID
+    Type: String
+
+Resources:
+
+  EC2Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI 
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref Keyname
+      SubnetId: !Select ["0", !Ref Subnets]
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          yum install -y php nginx 
+          chkconfig nginx on
+          service nginx start
+
+  EC2Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI 
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref Keyname
+      SubnetId: !Select ["1", !Ref Subnets]
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          yum install -y php nginx 
+          chkconfig nginx on
+          service nginx start
+
+  EC2Instance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI 
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref Keyname
+      SubnetId: !Select ["2", !Ref Subnets]
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          yum install -y php nginx 
+          chkconfig nginx on
+          service nginx start
+
+Outputs:
+  InstanceIDs:
+    Description: A list of the created instances
+    Value: !Join [ ",", [ !Ref EC2Instance1, !Ref EC2Instance2, !Ref EC2Instance3 ] ]
+

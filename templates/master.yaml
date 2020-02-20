@@ -1,0 +1,57 @@
+Description: >
+
+  This template deploys a VPC, with public subnets for each of 
+  three Availabilty Zones. It deploys security groups to support this stack. 
+
+  It then deploys one EC2 instance in each AZ in the public subnet running
+  a simple web service. It deploys an Application Load Balancer in the public
+  subnet to distribute requests among the three client instances.
+
+Resources:
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://awscfdemo-templates.s3-us-west-1.amazonaws.com/vpc.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VpcCIDR: 10.10.0.0/16
+        PublicSubnet1CIDR: 10.10.1.0/24
+        PublicSubnet2CIDR: 10.10.2.0/24
+        PublicSubnet3CIDR: 10.10.3.0/24
+
+  SecurityGroups:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://awscfdemo-templates.s3-us-west-1.amazonaws.com/sg.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VPC: !GetAtt VPC.Outputs.VPC
+
+  ALB:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://awscfdemo-templates.s3-us-west-1.amazonaws.com/alb.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VPC: !GetAtt VPC.Outputs.VPC
+        Subnets: !GetAtt VPC.Outputs.PublicSubnets
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
+
+  EC2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://awscfdemo-templates.s3-us-west-1.amazonaws.com/ec2.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        InstanceType: t2.micro
+        VPC: !GetAtt VPC.Outputs.VPC
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.EC2HostSecurityGroup
+        Subnets: !GetAtt VPC.Outputs.PublicSubnets
+        Keyname: raisedemo
+        AMI: ami-0abb43d6c8836b824
+
+Outputs:
+
+  WebsiteServiceUrl:
+    Description: The URL endpoint for the website service
+    Value: !Join ["", [!GetAtt ALB.Outputs.LoadBalancerUrl, "/"]]
